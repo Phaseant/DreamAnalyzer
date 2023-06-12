@@ -5,6 +5,7 @@ import (
 	"github.com/Phaseant/DreamAnalyzer/internal/repository"
 	"github.com/Phaseant/DreamAnalyzer/internal/server"
 	"github.com/Phaseant/DreamAnalyzer/internal/service"
+	"github.com/xlab/closer"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -12,7 +13,6 @@ import (
 
 func main() {
 	setLogger()
-
 	if err := initConfig(); err != nil {
 		log.Fatalf("error initializing configs: %s", err.Error())
 	}
@@ -22,10 +22,16 @@ func main() {
 	service := service.NewService(repo)
 	handlers := handler.NewHandler(service)
 
-	srv := new(server.Server)
-	if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
-		log.Fatalf("Error while running server: %v", err)
-	}
+	go func() {
+		srv := new(server.Server)
+		if err := srv.Run(viper.GetString("port"), handlers.InitRoutes()); err != nil {
+			log.Fatalf("Error while running server: %v", err)
+		}
+		closer.Close()
+	}()
+
+	closer.Hold()
+
 }
 
 func initConfig() error {

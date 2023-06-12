@@ -14,22 +14,11 @@ func (h *Handler) sendPrompt(c *gin.Context) {
 		return
 	}
 
-	text, err := h.services.NewRequest(input.Text, BindLang(input.Lang))
+	text, err := h.services.NewRequest(input.Text, input.Lang)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, model.OutputModel{Text: text, Error: ""})
-}
-
-func BindLang(lang string) int {
-	switch lang {
-	case "english", "English":
-		return model.English
-	case "russian", "Russian":
-		return model.Russian
-	default:
-		return -1
-	}
 }

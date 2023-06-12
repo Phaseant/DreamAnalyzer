@@ -3,7 +3,7 @@ package service
 import "github.com/Phaseant/DreamAnalyzer/internal/repository"
 
 type Api interface {
-	NewRequest(text string, lang int) (string, error)
+	NewRequest(text, lang string) (string, error)
 }
 
 type Service struct {

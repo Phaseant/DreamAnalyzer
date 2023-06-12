@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"log"
+	"strings"
 
-	"github.com/Phaseant/DreamAnalyzer/internal/model"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -17,19 +17,39 @@ func NewGptClient(token string) *gptClient {
 	return &gptClient{client: client}
 }
 
-func (gpt *gptClient) NewRequest(ctx context.Context, text string, lang int) (string, error) {
+func (gpt *gptClient) NewRequest(ctx context.Context, text string, lang string) (string, error) {
+	request := text
+	langFlag := false
+	lang = strings.ToLower(lang)
+	if lang != "english" {
+		langFlag = true
+
+		resp, err := gpt.client.CreateChatCompletion(
+			ctx,
+			openai.ChatCompletionRequest{
+				Model: openai.GPT3Dot5Turbo,
+				Messages: []openai.ChatCompletionMessage{
+					{
+						Role:    openai.ChatMessageRoleUser,
+						Content: translateTo("english", buildPrompt(text)),
+					},
+				},
+			},
+		)
+		if err != nil {
+			log.Print("error while translating text into english: ", err)
+		}
+		request = resp.Choices[0].Message.Content
+	}
+
 	resp, err := gpt.client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
 			Model: openai.GPT3Dot5Turbo,
 			Messages: []openai.ChatCompletionMessage{
 				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: DAN_Prompt,
-				},
-				{
 					Role:    openai.ChatMessageRoleUser,
-					Content: buildPrompt(text, lang),
+					Content: DAN_Prompt + request,
 				},
 			},
 		},
@@ -39,17 +59,35 @@ func (gpt *gptClient) NewRequest(ctx context.Context, text string, lang int) (st
 		log.Printf("ChatCompletion error: %v\n", err)
 		return "", err
 	}
+	answer := resp.Choices[0].Message.Content
 
-	return resp.Choices[0].Message.Content, nil
+	if langFlag {
+		resp, err = gpt.client.CreateChatCompletion(
+			ctx,
+			openai.ChatCompletionRequest{
+				Model: openai.GPT3Dot5Turbo,
+				Messages: []openai.ChatCompletionMessage{
+					{
+						Role:    openai.ChatMessageRoleUser,
+						Content: translateTo(lang, answer),
+					},
+				},
+			},
+		)
+		if err != nil {
+			log.Print("error while translating text into, ", lang, ": ", err)
+		}
+		answer = resp.Choices[0].Message.Content
+	}
+
+	return answer, nil
 }
 
-func buildPrompt(text string, lang int) string {
-	switch lang {
-	case model.English:
-		return EnglishStart + text + EnglishEnd
-	case model.Russian:
-		return RussianStart + text + RussianEnd
-	default:
-		return EnglishStart + text + EnglishEnd
-	}
+func buildPrompt(text string) string {
+	return englishStart + text + englishEnd
+}
+
+// ChatGPT is more trained on english model, so we need to translate text to english before sending it to the model and translate it back to the original language after receiving the answer.
+func translateTo(lang, text string) string {
+	return "translate this text: " + text + " to " + lang
 }

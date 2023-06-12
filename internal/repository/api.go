@@ -12,6 +12,6 @@ func newApiRepo(gpt *gptClient) *ApiRepo {
 	}
 }
 
-func (api *ApiRepo) NewRequest(text string, lang int) (string, error) {
+func (api *ApiRepo) NewRequest(text string, lang string) (string, error) {
 	return api.gpt.NewRequest(context.Background(), text, lang)
 }

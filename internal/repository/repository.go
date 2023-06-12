@@ -1,7 +1,7 @@
 package repository
 
 type Api interface {
-	NewRequest(text string, lang int) (string, error)
+	NewRequest(text string, lang string) (string, error)
 }
 
 type Repository struct {

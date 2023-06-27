@@ -18,21 +18,24 @@ func NewGptClient(token string) *gptClient {
 
 func (gpt *gptClient) NewRequest(ctx context.Context, text string, lang string) (string, error) {
 	request := text
-	langFlag := false
 
-	lang, err := detectLang(text)
-	if err != nil {
-		return "", err
-	}
-	if lang != "en" { //check if the lang is not english, cause model's answer is more deep in english.
-		langFlag = true
+	log.Println("New request!")
 
-		translatedText, err := translateTo("en", text)
-		if err != nil {
-			return "", err
-		}
-		request = translatedText
-	}
+	// langFlag := false
+
+	// lang, err := detectLang(text)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// if lang != "en" { //check if the lang is not english, cause model's answer is more deep in english.
+	// 	langFlag = true
+
+	// 	translatedText, err := translateTo("en", text)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	request = translatedText
+	// }
 
 	resp, err := gpt.client.CreateChatCompletion( //send request to the model
 		ctx,
@@ -46,20 +49,22 @@ func (gpt *gptClient) NewRequest(ctx context.Context, text string, lang string) 
 			},
 		},
 	)
+	log.Println("GPT worked")
 	//TODO API returns different errors, need to handle them properly
 	if err != nil {
 		log.Printf("ChatCompletion error: %v\n", err)
 		return "", err
 	}
 	answer := resp.Choices[0].Message.Content
+	log.Println("gpt answer: ", answer)
 
-	if langFlag {
-		translatedText, err := translateTo(lang, answer)
-		if err != nil {
-			return "", err
-		}
-		answer = translatedText
-	}
+	// if langFlag {
+	// 	translatedText, err := translateTo(lang, answer)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	answer = translatedText
+	// }
 
 	return answer, nil
 }

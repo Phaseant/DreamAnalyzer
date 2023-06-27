@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/Phaseant/DreamAnalyzer/internal/model"
@@ -16,6 +17,7 @@ func (h *Handler) sendPrompt(c *gin.Context) {
 
 	text, err := h.services.NewRequest(input.Text, input.Lang)
 	if err != nil {
+		log.Println("Error in sendPrompt: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
